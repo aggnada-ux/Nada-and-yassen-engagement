@@ -882,56 +882,75 @@
     render();
   })();
 
-    // Send wishes via Google Form
-  document.getElementById('sendWishBtn').addEventListener('click', function(){
-    var nameEl = document.getElementById('wishName');
-    var msgEl = document.getElementById('wishMsg');
-    var name = nameEl.value.trim();
-    var msg = msgEl.value.trim();
-    var rsvpEl = document.querySelector('input[name="rsvp"]:checked');
-    var rsvp = rsvpEl ? rsvpEl.value : 'Happily attending';
-    var btn = document.getElementById('sendWishBtn');
-    var form = document.getElementById('wishesForm');
-    var success = document.getElementById('wishSuccess');
+    // Send wishes via Google Form (hidden iframe method)
+  (function(){
+    // Create hidden iframe for form submission
+    var iframe = document.createElement('iframe');
+    iframe.name = 'gform-iframe';
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
 
-    if(!name){
-      nameEl.focus();
-      nameEl.style.borderColor = '#D6202B';
-      return;
-    }
-    if(!msg){
-      msgEl.focus();
-      msgEl.style.borderColor = '#D6202B';
-      return;
-    }
+    document.getElementById('sendWishBtn').addEventListener('click', function(){
+      var nameEl = document.getElementById('wishName');
+      var msgEl = document.getElementById('wishMsg');
+      var name = nameEl.value.trim();
+      var msg = msgEl.value.trim();
+      var rsvpEl = document.querySelector('input[name="rsvp"]:checked');
+      var rsvp = rsvpEl ? rsvpEl.value : 'Happily attending';
+      var btn = document.getElementById('sendWishBtn');
+      var formDiv = document.getElementById('wishesForm');
+      var success = document.getElementById('wishSuccess');
 
-    // Show sending state
-    btn.classList.add('sending');
-    btn.innerHTML = '<span>Sending...</span>';
+      if(!name){
+        nameEl.focus();
+        nameEl.style.borderColor = '#D6202B';
+        return;
+      }
+      if(!msg){
+        msgEl.focus();
+        msgEl.style.borderColor = '#D6202B';
+        return;
+      }
 
-    // Submit to Google Form
-    var formURL = 'https://docs.google.com/forms/d/e/1FAIpQLSeRN1r7jNdIvnLvbL7275nubtBLsUep-sgi3_-lBVCkg10o9g/formResponse';
-    var formData = new URLSearchParams();
-    formData.append('entry.1254568647', name);
-    formData.append('entry.761863531', rsvp);
-    formData.append('entry.113536705', msg);
+      // Reset border colors
+      nameEl.style.borderColor = '';
+      msgEl.style.borderColor = '';
 
-    fetch(formURL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: formData.toString()
-    }).then(function(){
-      // Success â€” show thank you
-      form.style.display = 'none';
-      success.style.display = 'block';
-    }).catch(function(){
-      // no-cors always goes here but data is still sent
-      form.style.display = 'none';
-      success.style.display = 'block';
+      // Show sending state
+      btn.classList.add('sending');
+      btn.textContent = 'Sending...';
+
+      // Build a real HTML form and submit it to the hidden iframe
+      var form = document.createElement('form');
+      form.method = 'POST';
+      form.action = 'https://docs.google.com/forms/d/e/1FAIpQLSeRN1r7jNdIvnLvbL7275nubtBLsUep-sgi3_-lBVCkg10o9g/formResponse';
+      form.target = 'gform-iframe';
+
+      var fields = {
+        'entry.1853984387': name,
+        'entry.145629354': rsvp,
+        'entry.1419834535': msg
+      };
+
+      for (var key in fields) {
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = fields[key];
+        form.appendChild(input);
+      }
+
+      document.body.appendChild(form);
+      form.submit();
+      document.body.removeChild(form);
+
+      // Show success after a short delay
+      setTimeout(function(){
+        formDiv.style.display = 'none';
+        success.style.display = 'block';
+      }, 1500);
     });
-  });
-
+  })();
   // Send another
   document.getElementById('sendAnotherBtn').addEventListener('click', function(){
     var form = document.getElementById('wishesForm');
